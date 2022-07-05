@@ -173,8 +173,6 @@ cm0 <- lmer(data = combdat, rt ~ 1 + (1|pp_id))
 cm1 <- lmer(data = combdat, rt ~ velocity.bl * offsettime.f + (1|pp_id))
 exp((BIC(cm0) - BIC(cm1))/2)
 summary(cm1)
-quants <- quantile(driving_windat$velocity.bl, p = c(.05, .95))
-seq(quants[1], quants[2], length.out = 5)
 plotdat <- data.table(data.frame(emmeans(cm1, 
                                          specs = c("velocity.bl", "offsettime.f"),
                                          at = list(velocity.bl = quantile(driving_windat$velocity.bl, p = c(.1, .25, .5, .75, .9)), offsettime.f = levels(offsetdat$offsettime.f)),
@@ -186,3 +184,24 @@ ggplot(plotdat, aes(x = offsettime.f, y = emmean)) +
 ```
 
 BF < 0.0001 indicates no interaction between offset time and speed. 5 plots for the .1, .25, .5, .75 and .9 quantiles of velocities.
+
+### Just speed
+
+```{r}
+cm0 <- lmer(data = combdat, rt ~ 1 + (1|pp_id))
+cm1 <- lmer(data = combdat, rt ~ velocity.bl + (1|pp_id))
+exp((BIC(cm0) - BIC(cm1))/2)
+summary(cm1)
+plotdat <- data.table(data.frame(emmeans(cm1, 
+                                         specs = c("velocity.bl"),
+                                         at = list(velocity.bl = quantile(driving_windat$velocity.bl, p = c(.1, .25, .5, .75, .9))),
+                                         type = "response")))
+
+ggplot(data = plotdat, aes(x = velocity.bl, y = emmean)) +
+  geom_point(data = combdat[velocity.bl %between% c(-3, 3)], aes(x = velocity.bl, y = rt, color = barcol), alpha = .3) +
+  scale_colour_identity() +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = .1) 
+```
+

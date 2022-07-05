@@ -370,15 +370,6 @@ summary(cm1)
 ```
 
 ```r
-quants <- quantile(driving_windat$velocity.bl, p = c(.05, .95))
-seq(quants[1], quants[2], length.out = 5)
-```
-
-```
-## [1] -4.7589012 -3.0140842 -1.2692672  0.4755498  2.2203668
-```
-
-```r
 plotdat <- data.table(data.frame(emmeans(cm1, 
                                          specs = c("velocity.bl", "offsettime.f"),
                                          at = list(velocity.bl = quantile(driving_windat$velocity.bl, p = c(.1, .25, .5, .75, .9)), offsettime.f = levels(offsetdat$offsettime.f)),
@@ -392,3 +383,64 @@ ggplot(plotdat, aes(x = offsettime.f, y = emmean)) +
 ![](timing_driving_analysis_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 BF < 0.0001 indicates no interaction between offset time and speed. 5 plots for the .1, .25, .5, .75 and .9 quantiles of velocities.
+
+### Just speed
+
+
+```r
+cm0 <- lmer(data = combdat, rt ~ 1 + (1|pp_id))
+cm1 <- lmer(data = combdat, rt ~ velocity.bl + (1|pp_id))
+exp((BIC(cm0) - BIC(cm1))/2)
+```
+
+```
+## [1] 0.001783224
+```
+
+```r
+summary(cm1)
+```
+
+```
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: rt ~ velocity.bl + (1 | pp_id)
+##    Data: combdat
+## 
+## REML criterion at convergence: 7045.9
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -5.3580 -0.5498 -0.0326  0.5071  5.9248 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  pp_id    (Intercept) 0.198    0.445   
+##  Residual             1.854    1.362   
+## Number of obs: 2019, groups:  pp_id, 29
+## 
+## Fixed effects:
+##             Estimate Std. Error t value
+## (Intercept)  9.97087    0.08851  112.65
+## velocity.bl -0.01634    0.01135   -1.44
+## 
+## Correlation of Fixed Effects:
+##             (Intr)
+## velocity.bl 0.104
+```
+
+```r
+plotdat <- data.table(data.frame(emmeans(cm1, 
+                                         specs = c("velocity.bl"),
+                                         at = list(velocity.bl = quantile(driving_windat$velocity.bl, p = c(.1, .25, .5, .75, .9))),
+                                         type = "response")))
+
+ggplot(data = plotdat, aes(x = velocity.bl, y = emmean)) +
+  geom_point(data = combdat[velocity.bl %between% c(-3, 3)], aes(x = velocity.bl, y = rt, color = barcol), alpha = .3) +
+  scale_colour_identity() +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = .1) 
+```
+
+![](timing_driving_analysis_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
